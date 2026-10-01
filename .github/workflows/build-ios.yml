@@ -19,21 +19,13 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake ninja meson pkg-config xcodegen
+          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
 
       - name: Setup vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
           ~/vcpkg/bootstrap-vcpkg.sh
           echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
-
-      - name: Setup Vulkan SDK
-        run: |
-          curl -LO https://sdk.lunarg.com/sdk/download/latest/mac/vulkan-sdk.dmg
-          hdiutil attach vulkan-sdk.dmg
-          sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan \
-            --root ~/VulkanSDK --accept-licenses --default-answer --confirm-command install
-          hdiutil detach /Volumes/vulkansdk-macos-*
-          echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
 
       - name: Fetch MoltenVK
         run: ./scripts/build/ios/fetch-moltenvk.sh
@@ -42,9 +34,7 @@ jobs:
         run: ./scripts/build/ios/stage-fonts.sh
 
       - name: CMake configure
-        run: |
-          export PATH="$(brew --prefix)/bin:$PATH"
-          cmake --preset ios-vulkan
+        run: cmake --preset ios-vulkan
 
       - name: CMake build
         run: cmake --build build/ios-vulkan --target GeneralsZH
