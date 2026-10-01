@@ -1,0 +1,48 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Install dependencies
+        run: |
+          brew install cmake ninja meson pkg-config
+          brew install xcodegen
+
+      - name: Fetch MoltenVK
+        run: ./scripts/build/ios/fetch-moltenvk.sh
+
+      - name: Stage fonts
+        run: ./scripts/build/ios/stage-fonts.sh
+
+      - name: CMake configure
+        run: cmake --preset ios-vulkan
+
+      - name: CMake build
+        run: cmake --build build/ios-vulkan --target GeneralsZH
+
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios-vulkan/GeneralsZH.app Payload/
+          zip -r GeneralsZH-unsigned.ipa Payload
+          rm -rf Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: GeneralsZH-unsigned
+          path: GeneralsZH-unsigned.ipa
+          retention-days: 7
